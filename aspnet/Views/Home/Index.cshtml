@@ -1,0 +1,267 @@
+@{
+    ViewData["Title"] = "Welcome";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DemoAPI</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg-start: #f6efe6;
+            --bg-end: #dbe7f5;
+            --card: rgba(255, 255, 255, 0.82);
+            --text: #132238;
+            --muted: #5a6a7f;
+            --accent: #c96f3b;
+            --accent-dark: #9f5127;
+            --line: rgba(19, 34, 56, 0.12);
+            --shadow: 0 24px 80px rgba(40, 58, 82, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 32%),
+                radial-gradient(circle at 85% 15%, rgba(201, 111, 59, 0.25), transparent 18%),
+                linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            overflow: hidden;
+        }
+
+        .shell {
+            position: relative;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 32px;
+        }
+
+        .shell::before,
+        .shell::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(8px);
+            opacity: 0.7;
+        }
+
+        .shell::before {
+            width: 280px;
+            height: 280px;
+            background: rgba(201, 111, 59, 0.16);
+            top: 8%;
+            left: 8%;
+        }
+
+        .shell::after {
+            width: 360px;
+            height: 360px;
+            background: rgba(56, 119, 189, 0.14);
+            right: -80px;
+            bottom: -60px;
+        }
+
+        .panel {
+            position: relative;
+            width: min(960px, 100%);
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            overflow: hidden;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+        }
+
+        .hero,
+        .meta {
+            padding: 48px;
+        }
+
+        .hero {
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15)),
+                linear-gradient(135deg, rgba(201, 111, 59, 0.08), rgba(56, 119, 189, 0.12));
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(19, 34, 56, 0.06);
+            color: var(--muted);
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+        }
+
+        h1 {
+            margin: 22px 0 16px;
+            font-size: clamp(2.6rem, 5vw, 4.8rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+        }
+
+        .lead {
+            margin: 0;
+            max-width: 34rem;
+            color: var(--muted);
+            font-size: 1.08rem;
+            line-height: 1.8;
+        }
+
+        .actions {
+            margin-top: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 160px;
+            padding: 14px 22px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, var(--accent), #e48c57);
+            color: #fffaf4;
+            box-shadow: 0 14px 32px rgba(201, 111, 59, 0.28);
+        }
+
+        .button-secondary {
+            border: 1px solid var(--line);
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.58);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button-primary:hover {
+            box-shadow: 0 18px 38px rgba(201, 111, 59, 0.34);
+            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+        }
+
+        .meta {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 28px;
+            border-left: 1px solid var(--line);
+        }
+
+        .meta-card {
+            padding: 22px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(19, 34, 56, 0.08);
+        }
+
+        .meta-label {
+            margin: 0 0 10px;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .meta-value {
+            margin: 0;
+            font-size: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(19, 34, 56, 0.07);
+            color: var(--text);
+            font-size: 0.92rem;
+        }
+
+        @@media (max-width: 860px) {
+            body {
+                overflow: auto;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .meta {
+                border-left: 0;
+                border-top: 1px solid var(--line);
+            }
+
+            .hero,
+            .meta {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="panel">
+            <div class="grid">
+                <div class="hero">
+                    <span class="eyebrow">ASP.NET MVC WELCOME</span>
+                    <h1>Welcome to DemoAPI</h1>
+                    <p class="lead">
+                        這是為你的 API 專案新增的 MVC 首頁。現在直接輸入 <strong>http://localhost/</strong>，
+                        就能看到一個清楚、友善且可直接進入文件入口的 welcome 畫面。
+                    </p>
+                    <div class="actions">
+                        <a class="button button-primary" href="http://localhost/Swagger/index.html">SWAGGER</a>
+                        <a class="button button-secondary" href="/swagger/index.html">Local Docs</a>
+                    </div>
+                </div>
+                <aside class="meta">
+                    <div class="meta-card">
+                        <p class="meta-label">ENTRY POINT</p>
+                        <p class="meta-value">Root URL now serves an MVC landing page for the project.</p>
+                    </div>
+                    <div class="meta-card">
+                        <p class="meta-label">WHAT YOU CAN DO</p>
+                        <div class="badge-row">
+                            <span class="badge">Browse API docs</span>
+                            <span class="badge">Verify deployment</span>
+                            <span class="badge">Quick project entry</span>
+                        </div>
+                    </div>
+                    <div class="meta-card">
+                        <p class="meta-label">ROUTE</p>
+                        <p class="meta-value">`/` -> `HomeController.Index`</p>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,42 @@
+# =====================
+# ASP.NET 專案
+# =====================
+/aspnet/bin/
+/aspnet/obj/
+/aspnet/.vs/
+/aspnet/*.user
+/aspnet/*.suo
+/aspnet/*.cache
+/aspnet/*.db
+/aspnet/*.sqlite
+/aspnet/*.sqlite3
+/aspnet/*.dll
+# temp build
+/aspnet/temp_build/
+
+# logs
+/aspnet/logs/
+/aspnet/*.log
+
+# =====================
+# Laravel 專案
+# =====================
+/laravel/vendor/
+/laravel/node_modules/
+/laravel/public/build/
+/laravel/public/hot/
+/laravel/public/storage/
+/laravel/storage/*.key
+/laravel/storage/pail/
+/laravel/.env
+/laravel/.env.backup
+/laravel/.env.production
+/laravel/.phpactor.json
+/laravel/.phpunit.result.cache
+/laravel/Homestead.json
+/laravel/Homestead.yaml
+/laravel/storage/framework/views/*
+/laravel/storage/framework/cache/*
+/laravel/storage/framework/sessions/*
+/laravel/storage/logs/*
+/laravel/database/*.sqlite

@@ -1,0 +1,92 @@
+# Older Docker Compose files sometimes used a `version` field.
+# Newer Docker Compose versions can infer the syntax version automatically.
+
+services:
+  mysql:
+    image: mariadb:10.6
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  laravel:
+    build:
+      context: ./laravel
+    container_name: laravel
+    volumes:
+      - ./laravel:/var/www
+    #要用 php-fpm 的方式就要註解，改用預設的 expose: - "9000"，因為
+    #ports:
+      #- "8000:8000"
+    expose:
+      - "9000"
+    depends_on:
+      - mysql
+      - redis
+    #如果要改用 Nginx，這行就要註解，因為要用 php-fpm 的方式
+    #command: php artisan serve --host=0.0.0.0 --port=8000
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    depends_on:
+      - mysql
+
+  redis-commander:
+    image: rediscommander/redis-commander
+    container_name: redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+
+  aspnet:
+    build:
+      context: ./aspnet
+    expose:
+      - "80"
+    volumes:
+      - ./aspnet/logs:/app/logs
+    environment:
+      # true 表示要把 order worker 打開，false 表示要關
+      - ENABLE_ORDER_WORKER=true 
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - mysql
+      - redis
+      
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./laravel:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - laravel
+      - aspnet
+
+volumes:
+  mysql_data:
