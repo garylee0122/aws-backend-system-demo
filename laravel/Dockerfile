@@ -8,39 +8,47 @@ RUN apt-get update && apt-get install -y \
     zip \
     libzip-dev \
     libonig-dev \
-    libxml2-dev
+    libxml2-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions
+# 安裝 PHP extensions
 RUN docker-php-ext-install \
     pdo \
     pdo_mysql \
     zip
 
-# Redis extension
+# 安裝 Redis extension
 RUN pecl install redis \
     && docker-php-ext-enable redis
 
-# Composer
+# 安裝 Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# 設定工作目錄
 WORKDIR /var/www
 
-# 先複製 composer 檔🔥
+# 先複製 composer 檔案（build cache optimization🔥）
 COPY composer.json composer.lock ./
 
-# Composer install🔥
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# 安裝 PHP 套件
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist
 
-# 再複製其他檔案🔥
+# 再複製 Laravel 專案
 COPY . .
 
-# Laravel cache
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
+# Laravel optimize
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache
 
 # 權限
-RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 8000
+EXPOSE 9000
 
-CMD php artisan serve --host=0.0.0.0 --port=8000
+CMD ["php-fpm"]
