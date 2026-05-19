@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 # 安裝系統套件
 RUN apt-get update && apt-get install -y \
@@ -24,20 +24,20 @@ RUN pecl install redis \
 # 安裝 Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 設定工作目錄
+# 工作目錄
 WORKDIR /var/www
 
-# 先複製 composer 檔案（build cache optimization🔥）
+# build cache optimization🔥
 COPY composer.json composer.lock ./
 
-# 安裝 PHP 套件
+# composer install
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
     --prefer-dist
 
-# 再複製 Laravel 專案
+# 複製專案
 COPY . .
 
 # Laravel optimize
@@ -49,6 +49,6 @@ RUN php artisan view:cache
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 9000
+EXPOSE 8000
 
-CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
