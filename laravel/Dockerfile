@@ -1,35 +1,46 @@
 FROM php:8.2-fpm
 
-# 安裝套件
+# 安裝系統套件
 RUN apt-get update && apt-get install -y \
     git \
+    curl \
     unzip \
-    libzip-dev \
     zip \
-    curl
+    libzip-dev \
+    libonig-dev \
+    libxml2-dev
 
-# 安裝 PHP extension
-RUN docker-php-ext-install pdo pdo_mysql zip
+# PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    zip
 
-# 安裝 Composer
+# Redis extension
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 設定工作目錄
 WORKDIR /var/www
 
-# 先複製 composer（加快 build🔥）
-# COPY composer.json composer.lock ./
+# 先複製 composer 檔🔥
+COPY composer.json composer.lock ./
 
-# RUN composer install --no-scripts --no-autoloader
+# Composer install🔥
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# 再複製全部
+# 再複製其他檔案🔥
 COPY . .
 
-# RUN composer dump-autoload
+# Laravel cache
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
 
-# Laravel 權限
-# RUN chmod -R 775 storage bootstrap/cache
+# 權限
+RUN chmod -R 775 storage bootstrap/cache
 
-RUN composer install
+EXPOSE 8000
 
-CMD ["php-fpm"]
+CMD php artisan serve --host=0.0.0.0 --port=8000
