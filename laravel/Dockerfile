@@ -16,16 +16,8 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
 # 安裝 Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# 工作目錄
 WORKDIR /var/www
-
-# 利用快取優化
-COPY composer.json composer.lock ./
-
-RUN composer install \
-    --no-dev \
-    --optimize-autoloader \
-    --no-interaction \
-    --prefer-dist
 
 # 複製專案
 COPY . .
@@ -36,6 +28,16 @@ RUN chown -R www-data:www-data /var/www \
     && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
+
+# 利用快取優化
+COPY composer.json composer.lock ./
+
+# 執行 composer install
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist
 
 EXPOSE 8000
 
