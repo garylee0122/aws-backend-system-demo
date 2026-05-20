@@ -2,7 +2,7 @@ FROM php:8.2-cli
 
 # 1. 優化：將系統套件與 PHP 擴充合併在同一個步驟，減少不必要的 Docker Layer 殘留
 # 2. 優化：改用官方推薦的互助腳本「install-php-extensions」，它安裝 Redis 速度極快且極省記憶體！
-ADD https://github.com/mlocati/docker-php-extensions/releases/latest/download/install-php-extensions /usr/local/bin/
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     apt-get update && apt-get install -y \
