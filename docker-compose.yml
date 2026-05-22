@@ -1,76 +1,115 @@
-# Older Docker Compose files sometimes used a `version` field.
-# Newer Docker Compose versions can infer the syntax version automatically.
-
+# 定義一組互相獨立但又緊密協作的容器服務群（Services）
 services:
 
+  # --------------------------------------------------------------------------
+  # MariaDB 資料庫服務
+  # --------------------------------------------------------------------------
   mysql:
+    # 使用官方的 MariaDB 10.6 版本映像檔
     image: mariadb:10.6
+    # 將容器名稱指定為 mysql，方便其他容器在內部網路中直接用 http://mysql 連線
     container_name: mysql
+    # 損壞或重啟時的策略：always 代表不論何種原因停止（或 EC2 重啟），Docker 都會自動重啟此容器
     restart: always
+    # 設定容器內部的環境變數
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: app_db
-      MYSQL_USER: app_user
-      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root  # 設定資料庫 root 管理員的密碼
+      MYSQL_DATABASE: app_db     # 容器啟動時自動建立的預設資料庫名稱
+      MYSQL_USER: app_user       # 自動建立的專案專用資料庫使用者
+      MYSQL_PASSWORD: secret     # 該專用使用者的密碼
+    # 埠號映射（主機埠:容器內埠）：將 EC2 的 3307 埠對應到容器內的 3306 埠。
+    # 這樣你從外部（如 Navicat/DBeaver）連線 EC2 IP:3307 就能管理資料庫，且不衝突到本機可能有的 3306。
     ports:
       - "3307:3306"
+    # 掛載資料卷，用於資料持久化（防止容器刪除時資料消失）
     volumes:
+      # 將最下方定義的具名資料卷 `mysql_data` 掛載到容器內部的 MariaDB 資料存放路徑
       - mysql_data:/var/lib/mysql
 
+  # --------------------------------------------------------------------------
+  # Redis 快取與隊列服務
+  # --------------------------------------------------------------------------
   redis:
+    # 使用官方 Redis 7.2 版本映像檔
     image: redis:7.2
     container_name: redis
     restart: always
-    # 因為在 production，redis 通常不會直接對外開放，所以把 ports 註解
-    # ports:
-    #   - "6379:6379"
+    # 僅在 Docker 內部網路中「暴露」6379 埠，而不對外開放給 EC2 的實體埠。
+    # 這在 Production 非常安全，因為外部任何人不管用什麼 Port 都連不到你的 Redis，只有 Laravel 與 ASP.NET 容器能通訊。
     expose:
       - "6379"
 
+  # --------------------------------------------------------------------------
+  # Laravel 後端服務（PHP-FPM 模式）
+  # --------------------------------------------------------------------------
   laravel:
+    # 由於需要安裝 PHP 擴充套件，因此不使用現成 image，而是透過本地 Dockerfile 動態構建
     build:
-      context: ./laravel
+      context: ./laravel       # 指定構建時的上下文路徑（即 Laravel 專案目錄，內含 Dockerfile）
     container_name: laravel
     restart: always
+    # 設定容器內的預設工作目錄（進到 container 時預設停留在此資料夾）
     working_dir: /var/www
-    # 變更點 1：移除 ports，改用 expose 9000 供內部 Nginx 連線
+    # 僅在內部網絡暴露 php-fpm 預設的 9000 埠，供 Nginx 容器進行 FastCGI 轉發
     expose:
       - "9000"
+    # 容器啟動順序依賴性：確保 mysql 和 redis 容器都順利運行後，才開始啟動 laravel 容器
     depends_on:
       - mysql
       - redis
 
+  # --------------------------------------------------------------------------
+  # ASP.NET Core API 後端服務
+  # --------------------------------------------------------------------------
   aspnet:
+    # 同樣透過本地的 Dockerfile 進行動態構建
     build:
-      context: ./aspnet
+      context: ./aspnet        # 指定構建時的上下文路徑（即 ASP.NET 專案目錄）
     container_name: aspnet
     restart: always
+    # 僅在內部網路暴露 80 埠，供 Nginx 容器進行反向代理轉發
     expose:
       - "80"
+    # 將 EC2 上的 `./aspnet/logs` 資料夾掛載到容器內，方便直接在主機查看或排查應用程式日誌
     volumes:
       - ./aspnet/logs:/app/logs
+    # 設定 .NET 運行時所需的環境變數
     environment:
-      # true 表示要把 order worker 打開，false 表示要關
-      ENABLE_ORDER_WORKER: "true"
-      ASPNETCORE_URLS: http://+:80
-      ASPNETCORE_ENVIRONMENT: Production
+      ENABLE_ORDER_WORKER: "true"         # 自訂專案變數：開啟訂單後台異步處理 Worker
+      ASPNETCORE_URLS: http://+:80        # 強制 Kestrel 伺服器在容器內監聽 80 埠
+      ASPNETCORE_ENVIRONMENT: Production  # 設定運行環境為 Production（通常會關閉 Swagger 偵錯頁並優化效能）
     depends_on:
       - mysql
       - redis
 
+  # --------------------------------------------------------------------------
+  # Nginx 前端反向代理與靜態網頁伺服器（唯一對外門戶）
+  # --------------------------------------------------------------------------
   nginx:
+    # 使用官方最新的 Nginx 映像檔
     image: nginx:latest
     container_name: nginx
     restart: always
+    # 正式對外開放的埠號映射（主機 80 埠 : 容器 80 埠）。這是瀏覽器預設存取的標準入口
     ports:
       - "80:80"
     volumes:
+      # 1. 將本地編寫好的 default.conf 覆蓋掉 Nginx 容器內預設的虛擬主機設定
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      # 關鍵：讓本機的 ./laravel 專案根目錄，完美映射到 nginx 容器內的 /var/www/laravel
-      - ./laravel:/var/www/laravel
+
+      # 2. 🔥 學習階段關鍵：將本地的 ./laravel 專案根目錄，掛載到 nginx 容器內的 /var/www
+      # 這樣 Nginx 才能直接讀取到 Laravel public 目錄下的靜態檔案（CSS/JS/圖片），並進行分流處理。
+      - ./laravel:/var/www
+
+    # 確保兩大核心後端服務（aspnet, laravel）都準備好了，Nginx 才啟動並開始接收外界流量
     depends_on:
       - aspnet
       - laravel
 
+# --------------------------------------------------------------------------
+# 獨立資料卷（Volumes）宣告區塊
+# --------------------------------------------------------------------------
 volumes:
+  # 宣告一個名為 `mysql_data` 的具名資料卷。
+  # 這是由 Docker 全權託管的實體空間，即使上面 mysql 容器壞掉重建，資料依然會留在這裡，非常安全。
   mysql_data:
