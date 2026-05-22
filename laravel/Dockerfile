@@ -19,25 +19,24 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # 工作目錄
 WORKDIR /var/www
 
-# 複製專案
+# === 【調整重點：修正順序】 ===
+
+# 1. 先把完整專案檔案（包含 artisan）複製進去
 COPY . .
 
-# 權限與快取（合併在一起減少層數）
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 775 storage bootstrap/cache \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
-# 利用快取優化
-COPY composer.json composer.lock ./
-
-# 執行 composer install
+# 2. 緊接著執行 composer install（這時 artisan 存在，能順利跑完 post-autoload-dump，並建立 vendor）
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
     --prefer-dist
+
+# 3. 有了 vendor 之後，最後才調權限與建立 Laravel 快取（這樣就不會噴 vendor/autoload.php 找不到的錯了）
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 storage bootstrap/cache \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
 
 EXPOSE 8000
 
