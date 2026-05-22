@@ -1,4 +1,7 @@
 <?php
+// 必須註解掉 api.php 中的路由，才能在 web.php 中使用相同的路由定義，並且加上前綴 'laravel-api' 來區分。
+// 否則再 docker build 的時候會因為路由重複而報錯。
+/*
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
@@ -27,3 +30,4 @@ Route::get('/test-queue', function () {
     SendOrderJob::dispatch(123);
     return "Job dispatched!";
 });
+*/
