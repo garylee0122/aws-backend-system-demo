@@ -98,12 +98,12 @@ services:
       # 1. 將本地編寫好的 default.conf 覆蓋掉 Nginx 容器內預設的虛擬主機設定
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
 
-      # 2. 🔥 學習階段關鍵：將本地的 ./laravel 專案根目錄，掛載到 nginx 容器內的 /var/www
+      # 2. 學習階段關鍵：將本地的 ./laravel 專案根目錄，掛載到 nginx 容器內的 /var/www
       # 這樣 Nginx 才能直接讀取到 Laravel public 目錄下的靜態檔案（CSS/JS/圖片），並進行分流處理。
       - ./laravel:/var/www
       
-      # SSL 憑證掛進 container # ro 代表 readonly
-    - /etc/letsencrypt:/etc/letsencrypt:ro
+      # 3. SSL 憑證掛進 container（ro 代表 readonly，Production 環境標準資安設定）
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
     # 確保兩大核心後端服務（aspnet, laravel）都準備好了，Nginx 才啟動並開始接收外界流量
     depends_on:
