@@ -1,0 +1,60 @@
+# 定義這個自動化工作流程（Workflow）的名稱，會顯示在 GitHub 的 Actions 頁面上
+name: Deploy to AWS EC2
+
+# 設定觸發這個自動化流程的「事件（Event）」
+on:
+  push:
+    # 當有人執行 git push，且目標是 main 分支時，就會自動啟動這個流程
+    branches:
+      - main
+
+# 定義這個流程要執行的工作（Jobs）
+jobs:
+
+  # 建立一個名為 deploy 的工作
+  deploy:
+    # 告訴 GitHub 要在他們提供的最新版 Ubuntu 虛擬環境（Runner）中執行這個工作
+    runs-on: ubuntu-latest
+
+    # 工作裡面包含的一系列步驟（Steps）
+    steps:
+
+      # 步驟一：拉取專案原始碼
+      - name: Checkout repository
+        # 使用 GitHub 官方提供的 Action，把你在 GitHub 上的最新程式碼下載到虛擬環境中
+        uses: actions/checkout@v4
+
+      # 步驟二：透過 SSH 連線到 AWS EC2 並執行部署指令
+      - name: Deploy to EC2
+        # 使用業界很常用的第三方工具（appleboy/ssh-action）來處理 SSH 連線
+        uses: appleboy/ssh-action@v1.0.3
+
+        # 帶入剛才你在 GitHub Settings 建立的安全憑證（Secrets）
+        with:
+          host: ${{ secrets.EC2_HOST }}       # 你的 EC2 公開 IP 位址
+          username: ${{ secrets.EC2_USER }}   # 連線登入的使用者名稱（例如 ubuntu）
+          key: ${{ secrets.EC2_SSH_KEY }}     # 你產生的 SSH Private Key（私鑰）
+
+          # 成功連線進 EC2 後，要在 EC2 裡面依序執行的 Linux 指令
+          script: |
+
+            # 1. 切換視窗路徑到你在 EC2 上的專案資料夾
+            cd ~/aws-backend-system-demo
+
+            # 2. echo 提示文字，方便在 Log 中查看進度
+            echo "Pull latest code"
+
+            # 3. 從 GitHub 的 main 分支把剛才 push 的最新程式碼拉（pull）下來更新
+            git pull origin main
+
+            # 4. echo 重啟 Docker 容器
+            echo "Docker rebuild"
+
+            # 5. 停止並刪除目前正在運行的 Docker 容器、網路與暫存
+            docker compose down
+
+            # 6. 重新 Build 新的 Image（包含 Nginx, Laravel, ASP.NET）並在背景（-d）啟動起來
+            docker compose up -d --build
+
+            # 7. echo 部署完成！
+            echo "Deploy finished"
