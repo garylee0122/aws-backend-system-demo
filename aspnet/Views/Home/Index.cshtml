@@ -1,5 +1,9 @@
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment Environment
 @{
     ViewData["Title"] = "Welcome";
+    var isDevelopment = Environment.IsDevelopment();
+    var environmentName = isDevelopment ? "DEV" : "PROD";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -122,6 +126,12 @@
             line-height: 1.8;
         }
 
+        .environment-text {
+            margin: 0 0 16px;
+            color: var(--text);
+            font-weight: 700;
+        }
+
         .actions {
             margin-top: 32px;
             display: flex;
@@ -233,16 +243,23 @@
                 <div class="hero">
                     <span class="eyebrow">ASP.NET MVC WELCOME</span>
                     <h1>Welcome to DemoAPI</h1>
+                    <p class="lead environment-text">Current Environment: @environmentName</p>
                     <p class="lead">
-                        這是為你的 API 專案新增的 MVC 首頁。現在直接輸入 <strong>http://localhost/</strong>，
-                        就能看到一個清楚、友善且可直接進入文件入口的 welcome 畫面。
+                        This landing page helps you confirm which environment the application is currently running in and provides a quick entry point into the project.
                     </p>
-                    <div class="actions">
-                        <a class="button button-primary" href="http://localhost/Swagger/index.html">SWAGGER</a>
-                        <a class="button button-secondary" href="/swagger/index.html">Local Docs</a>
-                    </div>
+                    @if (isDevelopment)
+                    {
+                        <div class="actions">
+                            <a class="button button-primary" href="http://localhost/Swagger/index.html">SWAGGER</a>
+                            <a class="button button-secondary" href="/swagger/index.html">Local Docs</a>
+                        </div>
+                    }
                 </div>
                 <aside class="meta">
+                    <div class="meta-card">
+                        <p class="meta-label">ENVIRONMENT</p>
+                        <p class="meta-value">@environmentName</p>
+                    </div>
                     <div class="meta-card">
                         <p class="meta-label">ENTRY POINT</p>
                         <p class="meta-value">Root URL now serves an MVC landing page for the project.</p>
@@ -250,9 +267,12 @@
                     <div class="meta-card">
                         <p class="meta-label">WHAT YOU CAN DO</p>
                         <div class="badge-row">
-                            <span class="badge">Browse API docs</span>
                             <span class="badge">Verify deployment</span>
                             <span class="badge">Quick project entry</span>
+                            @if (isDevelopment)
+                            {
+                                <span class="badge">Browse API docs</span>
+                            }
                         </div>
                     </div>
                     <div class="meta-card">
